@@ -50,6 +50,30 @@ printint(int xx, int base, int sign)
 }
 
 static void
+printlong(long xx, long base, long sign)
+{
+  char buf[20];
+  int i;
+  uint64 x;
+
+  if(sign && (sign = xx < 0))
+    x = -xx;
+  else
+    x = xx;
+
+  i = 0;
+  do {
+    buf[i++] = digits[x % base];
+  } while((x /= base) != 0);
+
+  if(sign)
+    buf[i++] = '-';
+
+  while(--i >= 0)
+    consputc(buf[i]);
+}
+
+static void
 printptr(uint64 x)
 {
   int i;
@@ -89,6 +113,9 @@ printf(char *fmt, ...)
       break;
     case 'x':
       printint(va_arg(ap, int), 16, 1);
+      break;
+    case 'l':
+      printlong(va_arg(ap, long), 10, 1);
       break;
     case 'p':
       printptr(va_arg(ap, uint64));

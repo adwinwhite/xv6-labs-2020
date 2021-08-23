@@ -30,18 +30,22 @@ exec(char *path, char **argv)
   ilock(ip);
 
   // Check ELF header
-  if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
+  if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf)) {
     goto bad;
-  if(elf.magic != ELF_MAGIC)
+  }
+  if(elf.magic != ELF_MAGIC) {
     goto bad;
+  }
 
-  if((pagetable = proc_pagetable(p)) == 0)
+  if((pagetable = proc_pagetable(p)) == 0) {
     goto bad;
+  }
 
   // Load program into memory.
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
-    if(readi(ip, 0, (uint64)&ph, off, sizeof(ph)) != sizeof(ph))
+    if(readi(ip, 0, (uint64)&ph, off, sizeof(ph)) != sizeof(ph)) {
       goto bad;
+    }
     if(ph.type != ELF_PROG_LOAD)
       continue;
     if(ph.memsz < ph.filesz)
