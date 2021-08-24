@@ -43,6 +43,7 @@ void procinit(void) {
   kvminithart();
 }
 
+
 // Must be called with interrupts disabled,
 // to prevent race with process being moved
 // to a different CPU.
@@ -641,6 +642,17 @@ void procdump(void) {
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+uint64 numproc(void) {
+  uint64 proc_count = 0;
+  struct proc *p;
+  for (p = proc; p < &proc[NPROC]; p++) {
+    if (p->state != UNUSED) {
+      ++proc_count;
+    }
+  }
+  return proc_count;
 }
 
 int trace(uint64 mask) {

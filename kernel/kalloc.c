@@ -30,6 +30,8 @@ kinit()
   freerange(end, (void*)PHYSTOP);
 }
 
+// Initialized a linked-list in descending order.
+// That is r->next points to smaller address.
 void
 freerange(void *pa_start, void *pa_end)
 {
@@ -60,6 +62,17 @@ kfree(void *pa)
   r->next = kmem.freelist;
   kmem.freelist = r;
   release(&kmem.lock);
+}
+
+// Query current free memory in bytes
+uint64 knumf(void) {
+  uint64 num_freepg = 0;
+  struct run *r = kmem.freelist;
+  while (r) {
+    ++num_freepg;
+    r = r->next;
+  }
+  return num_freepg * 4096;
 }
 
 // Allocate one 4096-byte page of physical memory.
