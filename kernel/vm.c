@@ -440,3 +440,31 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+// Print all 64-bit info in each level's pagetables
+void vmprint0(pagetable_t pagetable, int level) {
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+      // Print dots
+      for (int i = 0; i < level; i++) {
+        printf(".. ");
+      }
+      printf("..%d: pte %p pa %p\n", level, pte, child);
+      if (level <= 2) {
+        vmprint((pagetable_t)child);
+      }
+    }
+  }
+}
+
+void vmprint(pagetable_t pagetable) {
+  if ((uint64)pagetable) {
+    printf("page table %p\n", pagetable);
+    vmprint0(pagetable, 0);
+  } else {
+    panic("vmprint: pagetable invalid");
+  }
+}
