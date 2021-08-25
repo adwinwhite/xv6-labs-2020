@@ -452,9 +452,9 @@ void vmprint0(pagetable_t pagetable, int level) {
       for (int i = 0; i < level; i++) {
         printf(".. ");
       }
-      printf("..%d: pte %p pa %p\n", level, pte, child);
+      printf("..%d: pte %p pa %p\n", i, pte, child);
       if (level <= 2) {
-        vmprint((pagetable_t)child);
+        vmprint0((pagetable_t)child, level + 1);
       }
     }
   }
