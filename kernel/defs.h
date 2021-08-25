@@ -158,11 +158,16 @@ void            uartputc_sync(int);
 int             uartgetc(void);
 
 // vm.c
+pagetable_t     kvmcreate(void);
 void            kvminit(void);
+void            kvmfree(pagetable_t);
+void            vmuse(pagetable_t);
 void            kvminithart(void);
-uint64          kvmpa(uint64);
-void            kvmmap(uint64, uint64, uint64, int);
+uint64          kvmpa(pagetable_t, uint64);
+void            kvmmap(pagetable_t, uint64, uint64, uint64, int);
+void            kvmunmap(pagetable_t, uint64, uint64, int);
 int             mappages(pagetable_t, uint64, uint64, uint64, int);
+int             unmappages(pagetable_t, uint64, uint64, int);
 pagetable_t     uvmcreate(void);
 void            uvminit(pagetable_t, uchar *, uint);
 uint64          uvmalloc(pagetable_t, uint64, uint64);
