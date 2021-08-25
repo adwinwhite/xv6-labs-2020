@@ -163,6 +163,10 @@ kvmpa(pagetable_t kernel_pagetable, uint64 va)
   uint64 off = va % PGSIZE;
   pte_t *pte;
   uint64 pa;
+
+  if (!kernel_pagetable) {
+    kernel_pagetable = idle_kernel_pagetable;
+  }
   
   pte = walk(kernel_pagetable, va, 0);
   if(pte == 0)
@@ -210,7 +214,7 @@ int unmappages(pagetable_t pagetable, uint64 va, uint64 size, int do_free) {
       // no va
       return -1;
     }
-    if (*pte & PTE_V == 0) {
+    if ((*pte & PTE_V) == 0) {
       // no pa.
       return -1;
     }
@@ -224,6 +228,10 @@ int unmappages(pagetable_t pagetable, uint64 va, uint64 size, int do_free) {
       kfree((void*)pa);
     }
     *pte = 0;
+
+    if(a == last)
+      break;
+    a += PGSIZE;
   }
   return 0;
 }
