@@ -13,6 +13,8 @@ struct mbuf;
 struct sock;
 #endif
 
+#define KPGPPROC
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);

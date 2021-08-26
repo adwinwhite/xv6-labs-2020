@@ -543,3 +543,6 @@ void vmprint(pagetable_t pagetable) {
     panic("vmprint: pagetable invalid");
   }
 }
+
+void vmdiff(pagetable_t pg1, pagetable_t pg2) {
+}

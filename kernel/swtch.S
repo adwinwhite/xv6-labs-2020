@@ -22,6 +22,11 @@ swtch:
         sd s10, 96(a0)
         sd s11, 104(a0)
 
+#ifdef KPGPPROC
+        # csrr t0, satp
+        # sd t0, 112(a0)
+#endif
+
         ld ra, 0(a1)
         ld sp, 8(a1)
         ld s0, 16(a1)
@@ -36,6 +41,13 @@ swtch:
         ld s9, 88(a1)
         ld s10, 96(a1)
         ld s11, 104(a1)
+
+#ifdef KPGPPROC
+        # ld t0, 112(a1)
+        # cssw satp, t0
+        # sfence.vma zero, zero
+#endif
+        
         
         ret
 

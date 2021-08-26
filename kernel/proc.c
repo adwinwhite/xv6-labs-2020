@@ -31,7 +31,6 @@ procinit(void)
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
   }
-  kvminithart();
 }
 
 // Must be called with interrupts disabled,
@@ -112,13 +111,15 @@ found:
     return 0;
   }
 
+#ifdef KPGPPROC
   // A copy of kernel pagetable.
-  /* p->kernel_pagetable = kvmcreate(); */
-  /* if (p->kernel_pagetable == 0) { */
-    /* freeproc(p); */
-    /* release(&p->lock); */
-    /* return 0; */
-  /* } */
+  p->kernel_pagetable = kvmcreate();
+  if (p->kernel_pagetable == 0) {
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+#endif
 
 
   // Allocate a page for the process's kernel stack.
@@ -127,8 +128,13 @@ found:
   char *pa = kalloc();
   if(pa == 0)
     panic("kalloc");
+#ifdef KPGPPROC
+  uint64 va = TRAMPOLINE - 4 * PGSIZE;
+  kvmmap(p->kernel_pagetable, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+#else
   uint64 va = TRAMPOLINE - (p->pid + 1) * 2 * PGSIZE;
   kvmmap(0, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+#endif
   p->kstack = va;
 
   // Set up new context to start executing at forkret,
@@ -136,6 +142,9 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
+#ifdef KPGPPROC
+  p->context.kernel_satp = MAKE_SATP(p->kernel_pagetable);
+#endif
 
   printf("finished allocating proc\n");
 
@@ -156,10 +165,12 @@ freeproc(struct proc *p)
   p->pagetable = 0;
   p->sz = 0;
 
+#ifdef KPGPPROC
   if (p->kernel_pagetable) {
     kvmunmap(p->kernel_pagetable, p->kstack, PGSIZE, 1);
     kvmfree(p->kernel_pagetable);
   }
+#endif
   p->kstack = 0;
   p->kernel_pagetable = 0;
   p->pid = 0;
@@ -295,7 +306,9 @@ fork(void)
   np->sz = p->sz;
 
   // Copy kernel pagetable 
-  np->kernel_pagetable = p->kernel_pagetable;
+#ifdef KPGPPROC
+  
+#endif
 
   np->parent = p;
 
@@ -496,7 +509,10 @@ scheduler(void)
         p->state = RUNNING;
         c->proc = p;
         printf("%d: switch to %s\n", cpuid(), p->name);
+        w_satp(MAKE_SATP(p->kernel_pagetable));
+        sfence_vma();
         swtch(&c->context, &p->context);
+        kvminithart();
         printf("%d: back to scheduler\n", cpuid());
 
         // Process is done running for now.
@@ -561,6 +577,7 @@ yield(void)
 void
 forkret(void)
 {
+  printf("forkret\n");
   static int first = 1;
 
   // Still holding p->lock from scheduler.

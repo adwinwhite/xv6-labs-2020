@@ -16,6 +16,9 @@ struct context {
   uint64 s9;
   uint64 s10;
   uint64 s11;
+
+  // kernel_satp
+  uint64 kernel_satp;
 };
 
 // Per-CPU state.
