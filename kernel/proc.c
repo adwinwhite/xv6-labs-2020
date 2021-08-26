@@ -81,7 +81,7 @@ allocpid() {
 static struct proc*
 allocproc(void)
 {
-  printf("started to alloc proc\n");
+  /* printf("started to alloc proc\n"); */
   struct proc *p;
 
   for(p = proc; p < &proc[NPROC]; p++) {
@@ -146,7 +146,7 @@ found:
   p->context.kernel_satp = MAKE_SATP(p->kernel_pagetable);
 #endif
 
-  printf("finished allocating proc\n");
+  /* printf("finished allocating proc\n"); */
 
   return p;
 }
@@ -508,12 +508,12 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
-        printf("%d: switch to %s\n", cpuid(), p->name);
+        /* printf("%d: switch to %s\n", cpuid(), p->name); */
         w_satp(MAKE_SATP(p->kernel_pagetable));
         sfence_vma();
         swtch(&c->context, &p->context);
         kvminithart();
-        printf("%d: back to scheduler\n", cpuid());
+        /* printf("%d: back to scheduler\n", cpuid()); */
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
@@ -577,7 +577,7 @@ yield(void)
 void
 forkret(void)
 {
-  printf("forkret\n");
+  /* printf("forkret\n"); */
   static int first = 1;
 
   // Still holding p->lock from scheduler.
