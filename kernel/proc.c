@@ -31,6 +31,7 @@ procinit(void)
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
   }
+  kvminithart();
 }
 
 // Must be called with interrupts disabled,
@@ -81,6 +82,7 @@ allocpid() {
 static struct proc*
 allocproc(void)
 {
+  printf("started to alloc proc\n");
   struct proc *p;
 
   for(p = proc; p < &proc[NPROC]; p++) {
@@ -111,12 +113,12 @@ found:
   }
 
   // A copy of kernel pagetable.
-  p->kernel_pagetable = kvmcreate();
-  if (p->kernel_pagetable == 0) {
-    freeproc(p);
-    release(&p->lock);
-    return 0;
-  }
+  /* p->kernel_pagetable = kvmcreate(); */
+  /* if (p->kernel_pagetable == 0) { */
+    /* freeproc(p); */
+    /* release(&p->lock); */
+    /* return 0; */
+  /* } */
 
 
   // Allocate a page for the process's kernel stack.
@@ -125,8 +127,8 @@ found:
   char *pa = kalloc();
   if(pa == 0)
     panic("kalloc");
-  uint64 va = TRAMPOLINE - 2 * PGSIZE;
-  kvmmap(p->kernel_pagetable, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+  uint64 va = TRAMPOLINE - (p->pid + 1) * 2 * PGSIZE;
+  kvmmap(0, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
   p->kstack = va;
 
   // Set up new context to start executing at forkret,
@@ -134,6 +136,8 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
+
+  printf("finished allocating proc\n");
 
   return p;
 }
@@ -491,7 +495,9 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+        printf("%d: switch to %s\n", cpuid(), p->name);
         swtch(&c->context, &p->context);
+        printf("%d: back to scheduler\n", cpuid());
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.

@@ -143,6 +143,9 @@ walkaddr(pagetable_t pagetable, uint64 va)
 void
 kvmmap(pagetable_t kernel_pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
 {
+  if (kernel_pagetable == 0) {
+    kernel_pagetable = idle_kernel_pagetable;
+  }
   if(mappages(kernel_pagetable, va, sz, pa, perm) != 0)
     panic("kvmmap");
 }
@@ -192,8 +195,10 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   for(;;){
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
-    if(*pte & PTE_V)
+    if(*pte & PTE_V) {
+      printf("va: %p\npte: %p\n", va, *pte);
       panic("remap");
+    }
     *pte = PA2PTE(pa) | perm | PTE_V;
     if(a == last)
       break;
