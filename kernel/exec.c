@@ -12,6 +12,7 @@ static int loadseg(pde_t *pgdir, uint64 addr, struct inode *ip, uint offset, uin
 int
 exec(char *path, char **argv)
 {
+  printf("exec\n");
   char *s, *last;
   int i, off;
   uint64 argc, sz = 0, sp, ustack[MAXARG+1], stackbase;
@@ -115,6 +116,11 @@ exec(char *path, char **argv)
   p->trapframe->epc = elf.entry;  // initial program counter = main
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
+
+  kvmunmap(p->kernel_pagetable, 0, oldsz, 0);
+  if (uvm2kvm(p->pagetable, p->kernel_pagetable, 0, p->sz) != 0) {
+    goto bad;
+  }
 
   if (p->pid == 1) {
     vmprint(p->pagetable);

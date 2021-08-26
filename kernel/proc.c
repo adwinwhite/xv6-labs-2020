@@ -260,6 +260,10 @@ userinit(void)
 
   p->state = RUNNABLE;
 
+  // add user mappings to kernel pagetable
+  /* kvmunmapboot(p->kernel_pagetable); */
+  uvm2kvm(p->pagetable, p->kernel_pagetable, 0, p->sz);
+
   release(&p->lock);
 }
 
@@ -268,6 +272,7 @@ userinit(void)
 int
 growproc(int n)
 {
+  printf("growproc %d by %d \n", myproc()->pid, n);
   uint sz;
   struct proc *p = myproc();
 
@@ -276,8 +281,12 @@ growproc(int n)
     if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
     }
+    if (uvm2kvm(p->pagetable, p->kernel_pagetable, sz, n) != 0) {
+      return -1;
+    }
   } else if(n < 0){
     sz = uvmdealloc(p->pagetable, sz, sz + n);
+    kvmunmap(p->kernel_pagetable, (uint64)(sz - n), (uint64)(-n), 0);
   }
   p->sz = sz;
   return 0;
@@ -288,6 +297,7 @@ growproc(int n)
 int
 fork(void)
 {
+  printf("fork\n");
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
@@ -304,6 +314,15 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+
+  printf("call uvm2kvm\n");
+  if (uvm2kvm(p->kernel_pagetable, np->kernel_pagetable, 0, p->sz) < 0) {
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
+  printf("copied mappings from user pg\n");
+
 
   // Copy kernel pagetable 
 #ifdef KPGPPROC
@@ -331,6 +350,7 @@ fork(void)
   np->state = RUNNABLE;
 
   release(&np->lock);
+  printf("forked\n");
 
   return pid;
 }
@@ -508,12 +528,12 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
-        /* printf("%d: switch to %s\n", cpuid(), p->name); */
+        printf("%d: switch to %d:%s\n", cpuid(), p->pid, p->name);
         w_satp(MAKE_SATP(p->kernel_pagetable));
         sfence_vma();
         swtch(&c->context, &p->context);
         kvminithart();
-        /* printf("%d: back to scheduler\n", cpuid()); */
+        printf("%d: back to scheduler\n", cpuid());
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.

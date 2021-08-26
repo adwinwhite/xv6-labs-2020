@@ -66,6 +66,35 @@ void kvmfree(pagetable_t kernel_pagetable) {
   kfree(kernel_pagetable);
 }
 
+void kvmunmapboot(pagetable_t kernel_pagetable) {
+  kvmunmap(kernel_pagetable, CLINT, 0x10000, 0);
+  kvmunmap(kernel_pagetable, VIRTIO0, PGSIZE, 0);
+  kvmunmap(kernel_pagetable, UART0, PGSIZE, 0);
+}
+
+// copy user mappings to kernel pagetable
+int
+uvm2kvm(pagetable_t upagetable, pagetable_t kpagetable, uint64 start_va, uint64 sz)
+{
+  printf("uvm2kvm called\n");
+  pte_t *pte;
+  uint64 pa, i;
+  uint flags;
+
+  for(i = start_va; i < start_va + sz; i += PGSIZE){
+    if((pte = walk(upagetable, i, 0)) == 0)
+      panic("uvm2kvm: pte should exist");
+    if((*pte & PTE_V) == 0)
+      panic("uvm2kvm: page not present");
+    pa = PTE2PA(*pte);
+    flags = PTE_FLAGS(*pte) || PTE_U;
+    if(mappages(kpagetable, i, PGSIZE, (uint64)pa, flags) != 0){
+      return -1;
+    }
+  }
+  return 0;
+}
+
 // Switch h/w page table register to the kernel's page table,
 // and enable paging.
 
@@ -193,8 +222,10 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   a = PGROUNDDOWN(va);
   last = PGROUNDDOWN(va + size - 1);
   for(;;){
-    if((pte = walk(pagetable, a, 1)) == 0)
+    if((pte = walk(pagetable, a, 1)) == 0) {
+      printf("No more free page\n");
       return -1;
+    }
     if(*pte & PTE_V) {
       printf("va: %p\npte: %p\n", va, *pte);
       panic("remap");
@@ -217,17 +248,20 @@ int unmappages(pagetable_t pagetable, uint64 va, uint64 size, int do_free) {
   for (;;) {
     if ((pte = walk(pagetable, a, 0)) == 0) {
       // no va
+      printf("no va\n");
       return -1;
     }
     if ((*pte & PTE_V) == 0) {
       // no pa.
+      printf("no pa\n");
       return -1;
     }
-    // I do not get this.
-    if(PTE_FLAGS(*pte) == PTE_V) {
-      //Not a leaf?
-      return -1;
-    }
+    //I do not get this.
+    /* if(PTE_FLAGS(*pte) == PTE_V) { */
+      /* //Not a leaf? */
+      /* printf("not leaf\n"); */
+      /* return -1; */
+    /* } */
     if(do_free){
       uint64 pa = PTE2PA(*pte);
       kfree((void*)pa);
@@ -454,23 +488,24 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 int
 copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 {
-  uint64 n, va0, pa0;
+  return copyin_new(pagetable, dst, srcva, len);
+  /* uint64 n, va0, pa0; */
 
-  while(len > 0){
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
-      return -1;
-    n = PGSIZE - (srcva - va0);
-    if(n > len)
-      n = len;
-    memmove(dst, (void *)(pa0 + (srcva - va0)), n);
+  /* while(len > 0){ */
+    /* va0 = PGROUNDDOWN(srcva); */
+    /* pa0 = walkaddr(pagetable, va0); */
+    /* if(pa0 == 0) */
+      /* return -1; */
+    /* n = PGSIZE - (srcva - va0); */
+    /* if(n > len) */
+      /* n = len; */
+    /* memmove(dst, (void *)(pa0 + (srcva - va0)), n); */
 
-    len -= n;
-    dst += n;
-    srcva = va0 + PGSIZE;
-  }
-  return 0;
+    /* len -= n; */
+    /* dst += n; */
+    /* srcva = va0 + PGSIZE; */
+  /* } */
+  /* return 0; */
 }
 
 // Copy a null-terminated string from user to kernel.
