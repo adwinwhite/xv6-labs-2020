@@ -75,6 +75,34 @@ sys_sleep(void)
 }
 
 uint64
+sys_sigalarm(void)
+{
+  uint64 n;
+  uint64 handler;
+  struct proc *p = myproc();
+
+  if (argaddr(0, &n) < 0) {
+    return -1;
+  }
+  if (argaddr(0, &handler) < 0) {
+    return -1;
+  }
+  p->alarm.alarm_interval = n;
+  p->alarm.alarm_handler = handler;
+  p->alarm.alarm_accumlator = 0;
+  return 0;
+}
+
+uint64 
+sys_sigreturn(void)
+{
+  struct proc *p = myproc();
+  *(p->trapframe) = p->alarm.trapframe;
+  p->alarm.setoff = 0;
+  return 0;
+}
+
+uint64
 sys_kill(void)
 {
   int pid;
