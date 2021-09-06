@@ -238,18 +238,16 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz;
   struct proc *p = myproc();
 
-  sz = p->sz;
   if(n > 0){
-    if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
-      return -1;
-    }
+      p->sz += n;
+    /* if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) { */
+      /* return -1; */
+    /* } */
   } else if(n < 0){
-    sz = uvmdealloc(p->pagetable, sz, sz + n);
+    p->sz = uvmdealloc(p->pagetable, p->sz, (p->sz) + n);
   }
-  p->sz = sz;
   return 0;
 }
 
@@ -623,6 +621,7 @@ kill(int pid)
   for(p = proc; p < &proc[NPROC]; p++){
     acquire(&p->lock);
     if(p->pid == pid){
+      printf("killing %d\n", p->pid);
       p->killed = 1;
       if(p->state == SLEEPING){
         // Wake process from sleep().

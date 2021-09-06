@@ -420,14 +420,17 @@ sys_exec(void)
   uint64 uargv, uarg;
 
   if(argstr(0, path, MAXPATH) < 0 || argaddr(1, &uargv) < 0){
+    printf("sys_1\n");
     return -1;
   }
   memset(argv, 0, sizeof(argv));
   for(i=0;; i++){
     if(i >= NELEM(argv)){
+    printf("sys_2\n");
       goto bad;
     }
     if(fetchaddr(uargv+sizeof(uint64)*i, (uint64*)&uarg) < 0){
+    printf("sys_3\n");
       goto bad;
     }
     if(uarg == 0){
@@ -435,10 +438,15 @@ sys_exec(void)
       break;
     }
     argv[i] = kalloc();
-    if(argv[i] == 0)
+    if(argv[i] == 0) {
+    printf("sys_4\n");
       goto bad;
+    }
     if(fetchstr(uarg, argv[i], PGSIZE) < 0)
+    {
+    printf("sys_5\n");
       goto bad;
+    }
   }
 
   int ret = exec(path, argv);

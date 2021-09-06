@@ -25,37 +25,38 @@ exec(char *path, char **argv)
 
   if((ip = namei(path)) == 0){
     end_op();
+    printf("0\n");
     return -1;
   }
   ilock(ip);
 
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
-    goto bad;
+    { printf("1\n"); goto bad; }
   if(elf.magic != ELF_MAGIC)
-    goto bad;
+    { printf("2\n"); goto bad; }
 
   if((pagetable = proc_pagetable(p)) == 0)
-    goto bad;
+    { printf("3\n"); goto bad; }
 
   // Load program into memory.
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, 0, (uint64)&ph, off, sizeof(ph)) != sizeof(ph))
-      goto bad;
+      { printf("4\n"); goto bad; }
     if(ph.type != ELF_PROG_LOAD)
       continue;
     if(ph.memsz < ph.filesz)
-      goto bad;
+      { printf("5\n"); goto bad; }
     if(ph.vaddr + ph.memsz < ph.vaddr)
-      goto bad;
+      { printf("6\n"); goto bad; }
     uint64 sz1;
     if((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz)) == 0)
-      goto bad;
+      { printf("7\n"); goto bad; }
     sz = sz1;
     if(ph.vaddr % PGSIZE != 0)
-      goto bad;
+      { printf("8\n"); goto bad; }
     if(loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0)
-      goto bad;
+      { printf("9\n"); goto bad; }
   }
   iunlockput(ip);
   end_op();
@@ -69,7 +70,7 @@ exec(char *path, char **argv)
   sz = PGROUNDUP(sz);
   uint64 sz1;
   if((sz1 = uvmalloc(pagetable, sz, sz + 2*PGSIZE)) == 0)
-    goto bad;
+    { printf("10\n"); goto bad; }
   sz = sz1;
   uvmclear(pagetable, sz-2*PGSIZE);
   sp = sz;
@@ -78,13 +79,13 @@ exec(char *path, char **argv)
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
-      goto bad;
+      { printf("11\n"); goto bad; }
     sp -= strlen(argv[argc]) + 1;
     sp -= sp % 16; // riscv sp must be 16-byte aligned
     if(sp < stackbase)
-      goto bad;
+      { printf("12\n"); goto bad; }
     if(copyout(pagetable, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
-      goto bad;
+      { printf("13\n"); goto bad; }
     ustack[argc] = sp;
   }
   ustack[argc] = 0;
@@ -93,9 +94,9 @@ exec(char *path, char **argv)
   sp -= (argc+1) * sizeof(uint64);
   sp -= sp % 16;
   if(sp < stackbase)
-    goto bad;
+    { printf("14\n"); goto bad; }
   if(copyout(pagetable, sp, (char *)ustack, (argc+1)*sizeof(uint64)) < 0)
-    goto bad;
+    { printf("15\n"); goto bad; }
 
   // arguments to user main(argc, argv)
   // argc is returned via the system call return

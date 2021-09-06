@@ -65,6 +65,30 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if (r_scause() == 13 || r_scause() == 15) {
+    // load page fault or store/AMO page fault
+    // only allocate what we need
+    uint64 va = r_stval();
+    uint64 sz = p->sz;
+    /* printf("old_sz: %p; new_sz: %p\n", sz, new_sz); */
+    if (va < sz) {
+        char *mem;
+        mem = kalloc();
+        if(mem != 0){
+            memset(mem, 0, PGSIZE);
+            if(mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+              kfree(mem);
+              printf("failed to map pages\n");
+              p->killed = 1;
+            }
+        } else {
+          printf("mem == 0\n");
+          p->killed = 1;
+        }
+    } else {
+        p->killed = 1;
+    }
+
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
@@ -137,13 +161,38 @@ kerneltrap()
   uint64 sepc = r_sepc();
   uint64 sstatus = r_sstatus();
   uint64 scause = r_scause();
+  struct proc *p = myproc();
   
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
   if(intr_get() != 0)
     panic("kerneltrap: interrupts enabled");
 
-  if((which_dev = devintr()) == 0){
+  if (scause == 13 || scause == 15) {
+    uint64 va = r_stval();
+    uint64 sz = p->sz;
+    /* printf("old_sz: %p; new_sz: %p\n", sz, new_sz); */
+    if (va < sz) {
+        char *mem;
+        mem = kalloc();
+        if(mem != 0){
+            memset(mem, 0, PGSIZE);
+            if(mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+              kfree(mem);
+              printf("failed to map pages\n");
+              p->killed = 1;
+            }
+        } else {
+          printf("mem == 0\n");
+          p->killed = 1;
+        }
+    } else {
+        printf("kerneltrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+        printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+        p->killed = 1;
+    }
+
+  } else if((which_dev = devintr()) == 0){
     printf("scause %p\n", scause);
     printf("sepc=%p stval=%p\n", r_sepc(), r_stval());
     panic("kerneltrap");
