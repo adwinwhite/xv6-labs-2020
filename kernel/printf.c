@@ -123,6 +123,15 @@ void backtrace(void) {
   }
 }
 
+void backtrace_frame(pagetable_t pgt, uint64 sp, uint64 fp) {
+  printf("backtrace:\n");
+  while (fp && fp > PGROUNDDOWN(fp) && fp < PGROUNDUP(fp)) {
+    printframe(pgt, sp, fp);
+    sp = fp;
+    fp = *((uint64 *)(walkaddr(pgt, fp - 16)));
+  }
+}
+
 void
 panic(char *s)
 {

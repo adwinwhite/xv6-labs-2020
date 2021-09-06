@@ -99,6 +99,9 @@ sys_sigreturn(void)
   struct proc *p = myproc();
   *(p->trapframe) = p->alarm.trapframe;
   p->alarm.setoff = 0;
+  printf("restored sp: %p\n", p->trapframe->sp);
+  backtrace_frame(p->pagetable, p->trapframe->sp, p->trapframe->s0);
+  printtrapframe(p->pagetable, p->trapframe);
   return 0;
 }
 

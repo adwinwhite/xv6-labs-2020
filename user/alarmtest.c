@@ -84,9 +84,16 @@ test1()
 
   printf("test1 start\n");
   count = 0;
+  /* int old_count = 0; */
   j = 0;
+  char buf[10];
+  gets(buf, 9);
   sigalarm(2, periodic);
   for(i = 0; i < 500000000; i++){
+    if (i % 500000 == 0) {
+        printf("i: %d, j: %d\n", i, j);
+        /* old_count = count; */
+    }
     if(count >= 10)
       break;
     foo(i, &j);

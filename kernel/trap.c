@@ -69,6 +69,10 @@ usertrap(void)
     if (which_dev == 2 && p->alarm.alarm_interval != 0 && p->alarm.alarm_handler != 0 && p->alarm.setoff == 0) {
       p->alarm.alarm_accumlator++;
       if (p->alarm.alarm_accumlator == p->alarm.alarm_interval) {
+        vmprint(p->pagetable);
+        printf("saved sp: %p\n", p->trapframe->sp);
+        backtrace_frame(p->pagetable, p->trapframe->sp, p->trapframe->s0);
+        printtrapframe(p->pagetable, p->trapframe);
         p->alarm.trapframe = *(p->trapframe);
         p->trapframe->epc = p->alarm.alarm_handler;
         p->alarm.alarm_accumlator = 0;

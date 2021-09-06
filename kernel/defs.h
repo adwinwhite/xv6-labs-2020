@@ -8,6 +8,11 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct trapframe;
+
+// util.c
+void            printframe(pagetable_t, uint64, uint64);
+void            printtrapframe(pagetable_t, struct trapframe*);
 
 // bio.c
 void            binit(void);
@@ -79,6 +84,7 @@ int             pipewrite(struct pipe*, uint64, int);
 // printf.c
 void            printf(char*, ...);
 void            backtrace(void);
+void            backtrace_frame(pagetable_t, uint64, uint64);
 void            panic(char*) __attribute__((noreturn));
 void            printfinit(void);
 
@@ -168,10 +174,12 @@ int             uvmcopy(pagetable_t, pagetable_t, uint64);
 void            uvmfree(pagetable_t, uint64);
 void            uvmunmap(pagetable_t, uint64, uint64, int);
 void            uvmclear(pagetable_t, uint64);
+pte_t*          walk(pagetable_t, uint64, int);
 uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+void            vmprint(pagetable_t);
 
 // plic.c
 void            plicinit(void);
