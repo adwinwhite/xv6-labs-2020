@@ -71,7 +71,7 @@ usertrap(void)
     uint64 va = r_stval();
     uint64 sz = p->sz;
     /* printf("old_sz: %p; new_sz: %p\n", sz, new_sz); */
-    if (va < sz) {
+    if (va < sz && va >= PGROUNDDOWN(p->trapframe->sp)) {
         char *mem;
         mem = kalloc();
         if(mem != 0){
@@ -82,7 +82,7 @@ usertrap(void)
               p->killed = 1;
             }
         } else {
-          printf("mem == 0\n");
+          /* printf("mem == 0\n"); */
           p->killed = 1;
         }
     } else {
@@ -183,7 +183,7 @@ kerneltrap()
               p->killed = 1;
             }
         } else {
-          printf("mem == 0\n");
+          /* printf("mem == 0\n"); */
           p->killed = 1;
         }
     } else {

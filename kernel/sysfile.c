@@ -81,12 +81,15 @@ sys_read(void)
 uint64
 sys_write(void)
 {
+    /* printf("sys_write!\n"); */
   struct file *f;
   int n;
   uint64 p;
 
-  if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
+  if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0) {
+      printf("sys_write: arg parse wrong\n");
     return -1;
+  }
 
   return filewrite(f, p, n);
 }
@@ -444,7 +447,7 @@ sys_exec(void)
     }
     if(fetchstr(uarg, argv[i], PGSIZE) < 0)
     {
-    printf("sys_5\n");
+    /* printf("sys_5\n"); */
       goto bad;
     }
   }

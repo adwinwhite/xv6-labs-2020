@@ -27,7 +27,7 @@ void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
-  printf("end: %p, PHYSTOP: %p\n", end, PHYSTOP);
+  /* printf("end: %p, PHYSTOP: %p\n", end, PHYSTOP); */
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -80,7 +80,7 @@ kalloc(void)
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   if (r == 0) {
-      printf("kalloc: no memory left\n");
+      /* printf("kalloc: no memory left\n"); */
   }
   return (void*)r;
 }

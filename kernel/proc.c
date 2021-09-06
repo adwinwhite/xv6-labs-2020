@@ -621,7 +621,7 @@ kill(int pid)
   for(p = proc; p < &proc[NPROC]; p++){
     acquire(&p->lock);
     if(p->pid == pid){
-      printf("killing %d\n", p->pid);
+      /* printf("killing %d\n", p->pid); */
       p->killed = 1;
       if(p->state == SLEEPING){
         // Wake process from sleep().

@@ -136,16 +136,25 @@ filewrite(struct file *f, uint64 addr, int n)
 {
   int r, ret = 0;
 
-  if(f->writable == 0)
+  if(f->writable == 0) {
+      printf("filewrite: unwrittable\n");
     return -1;
+  }
 
   if(f->type == FD_PIPE){
+      /* printf("filewrite: fd_pipe\n"); */
     ret = pipewrite(f->pipe, addr, n);
   } else if(f->type == FD_DEVICE){
-    if(f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
+      /* printf("filewrite: df_device\n"); */
+    if(f->major < 0 || f->major >= NDEV || !devsw[f->major].write) {
+        printf("filewrite: device number wrong\n");
       return -1;
+    }
     ret = devsw[f->major].write(1, addr, n);
   } else if(f->type == FD_INODE){
+      /* printf("filewrite: fd_inode\n"); */
+
+
     // write a few blocks at a time to avoid exceeding
     // the maximum log transaction size, including
     // i-node, indirect block, allocation blocks,
@@ -171,12 +180,14 @@ filewrite(struct file *f, uint64 addr, int n)
       if(r != n1)
         panic("short filewrite");
       i += r;
+      /* printf("max = %d, i = %d, n1 = %d, r = %d\n", max, i, n1, r); */
     }
     ret = (i == n ? n : -1);
   } else {
     panic("filewrite");
   }
 
+  /* printf("filewrite's ret = %d\n", ret); */
   return ret;
 }
 
