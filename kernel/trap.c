@@ -65,6 +65,16 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if (r_scause() == 15) {
+      uint64 va = r_stval();
+      uint64 new_pa = (uint64)kalloc();
+      if (new_pa == 0) {
+          panic("can't alloc mem");
+      }
+      memmove((void *)new_pa, (void *)walkaddr(p->pagetable, va), PGSIZE);
+      if (mappages(p->pagetable, va, PGSIZE, new_pa, PTE_FLAGS(*walk(p->pagetable, va, 0)) | PTE_W) != 0) {
+          panic("can't map new page");
+      }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
