@@ -320,6 +320,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
+    pagenlink_inc((void *)pa);
     /* if((mem = kalloc()) == 0) */
       /* goto err; */
     /* memmove(mem, (char*)pa, PGSIZE); */

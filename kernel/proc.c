@@ -92,6 +92,7 @@ allocpid() {
 static struct proc*
 allocproc(void)
 {
+  printf("allocproc\n");
   struct proc *p;
 
   for(p = proc; p < &proc[NPROC]; p++) {
@@ -112,6 +113,8 @@ found:
     release(&p->lock);
     return 0;
   }
+  printf("allocproc: after kalloc\n");
+
 
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
@@ -127,6 +130,7 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  printf("allocproc ended\n");
   return p;
 }
 

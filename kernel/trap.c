@@ -159,6 +159,20 @@ kerneltrap()
     panic("kerneltrap");
   }
 
+  struct proc *p = myproc();
+
+  if (scause == 16) {
+      uint64 va = r_stval();
+      uint64 new_pa = (uint64)kalloc();
+      if (new_pa == 0) {
+          panic("can't alloc mem");
+      }
+      memmove((void *)new_pa, (void *)walkaddr(p->pagetable, va), PGSIZE);
+      if (mappages(p->pagetable, va, PGSIZE, new_pa, PTE_FLAGS(*walk(p->pagetable, va, 0)) | PTE_W) != 0) {
+          panic("can't map new page");
+      }
+  }
+
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)
     yield();
