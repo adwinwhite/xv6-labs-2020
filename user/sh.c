@@ -64,6 +64,8 @@ runcmd(struct cmd *cmd)
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
 
+  /* printf("runcmd: start\n"); */
+
   if(cmd == 0)
     exit(1);
 
@@ -72,6 +74,7 @@ runcmd(struct cmd *cmd)
     panic("runcmd");
 
   case EXEC:
+    /* printf("sh: EXEC\n"); */
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(1);
@@ -157,6 +160,7 @@ main(void)
 
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
+      /* printf("reading line\n"); */
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
       // Chdir must be called by the parent, not the child.
       buf[strlen(buf)-1] = 0;  // chop \n
@@ -165,6 +169,7 @@ main(void)
       continue;
     }
     if(fork1() == 0)
+        /* printf("before runcmd\n"); */
       runcmd(parsecmd(buf));
     wait(0);
   }
@@ -184,6 +189,7 @@ fork1(void)
   int pid;
 
   pid = fork();
+  /* printf("pid: %d\n", pid); */
   if(pid == -1)
     panic("fork");
   return pid;

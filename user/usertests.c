@@ -77,11 +77,13 @@ copyout(char *s)
     uint64 addr = addrs[ai];
 
     int fd = open("README", 0);
+    printf("open\n");
     if(fd < 0){
       printf("open(README) failed\n");
       exit(1);
     }
     int n = read(fd, (void*)addr, 8192);
+    printf("read\n");
     if(n > 0){
       printf("read(fd, %p, 8192) returned %d, not -1 or 0\n", addr, n);
       exit(1);
@@ -93,11 +95,13 @@ copyout(char *s)
       printf("pipe() failed\n");
       exit(1);
     }
+    printf("pipe\n");
     n = write(fds[1], "x", 1);
     if(n != 1){
       printf("pipe write failed\n");
       exit(1);
     }
+    printf("write\n");
     n = read(fds[0], (void*)addr, 8192);
     if(n > 0){
       printf("read(pipe, %p, 8192) returned %d, not -1 or 0\n", addr, n);
@@ -105,6 +109,7 @@ copyout(char *s)
     }
     close(fds[0]);
     close(fds[1]);
+    printf("last\n");
   }
 }
 
@@ -2682,8 +2687,8 @@ main(int argc, char *argv[])
     void (*f)(char *);
     char *s;
   } tests[] = {
-    {execout, "execout"},
-    {copyin, "copyin"},
+    /* {execout, "execout"}, */
+    /* {copyin, "copyin"}, */
     {copyout, "copyout"},
     {copyinstr1, "copyinstr1"},
     {copyinstr2, "copyinstr2"},

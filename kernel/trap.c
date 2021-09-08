@@ -67,14 +67,15 @@ usertrap(void)
     syscall();
   } else if (r_scause() == 15) {
       uint64 va = r_stval();
+      pte_t *pte = walk(p->pagetable, va, 0);
       uint64 new_pa = (uint64)kalloc();
       if (new_pa == 0) {
-          panic("can't alloc mem");
+          /* printf("can't alloc mem\n"); */
+          exit(-1);
       }
-      memmove((void *)new_pa, (void *)walkaddr(p->pagetable, va), PGSIZE);
-      if (mappages(p->pagetable, va, PGSIZE, new_pa, PTE_FLAGS(*walk(p->pagetable, va, 0)) | PTE_W) != 0) {
-          panic("can't map new page");
-      }
+      memmove((void *)new_pa, (void *)PTE2PA(*pte), PGSIZE);
+      kfree((void *)PTE2PA(*pte));
+      *pte = PA2PTE(new_pa) | PTE_FLAGS(*pte) | PTE_W;
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
@@ -159,19 +160,19 @@ kerneltrap()
     panic("kerneltrap");
   }
 
-  struct proc *p = myproc();
+  /* struct proc *p = myproc(); */
 
-  if (scause == 16) {
-      uint64 va = r_stval();
-      uint64 new_pa = (uint64)kalloc();
-      if (new_pa == 0) {
-          panic("can't alloc mem");
-      }
-      memmove((void *)new_pa, (void *)walkaddr(p->pagetable, va), PGSIZE);
-      if (mappages(p->pagetable, va, PGSIZE, new_pa, PTE_FLAGS(*walk(p->pagetable, va, 0)) | PTE_W) != 0) {
-          panic("can't map new page");
-      }
-  }
+  /* if (scause == 15) { */
+      /* uint64 va = r_stval(); */
+      /* pte_t *pte = walk(p->pagetable, va, 0); */
+      /* uint64 new_pa = (uint64)kalloc(); */
+      /* if (new_pa == 0) { */
+          /* panic("can't alloc mem"); */
+      /* } */
+      /* memmove((void *)new_pa, (void *)PTE2PA(*pte), PGSIZE); */
+      /* kfree((void *)PTE2PA(*pte)); */
+      /* *pte = PA2PTE(new_pa) | PTE_FLAGS(*pte) | PTE_W; */
+  /* } */
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)

@@ -159,7 +159,7 @@ kalloc(void)
   acquire(&kmem.lock);
   r = kmem.freelist;
   if(r) {
-    printf("r: %p\n", r);
+    /* printf("r: %p\n", r); */
     kmem.freelist = r->next;
     /* if ((uint64)kmem.freelist < new_end || (uint64)kmem.freelist >= PHYSTOP) { */
         /* panic("kalloc: out of range"); */
@@ -168,10 +168,10 @@ kalloc(void)
   release(&kmem.lock);
 
 
-    if ((uint64)r->next != 0 && ((uint64)r->next < new_end || (uint64)r->next >= PHYSTOP)) {
-        printf("r: %p, r->next: %p\n", r, r->next);
-        panic("kalloc: out of range");
-    }
+    /* if ((uint64)r->next != 0 && ((uint64)r->next < new_end || (uint64)r->next >= PHYSTOP)) { */
+        /* printf("r: %p, r->next: %p\n", r, r->next); */
+        /* panic("kalloc: out of range"); */
+    /* } */
   if(r) {
     pagenlink_inc(r);
     /* printf("r: %p, nlink_addr: %p\n", r, pagenlink(r)); */
