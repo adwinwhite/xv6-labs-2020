@@ -33,6 +33,7 @@ createfile(char *file, int nblock)
     exit(-1);
   }
   for(i = 0; i < nblock; i++) {
+      printf("creating file %d\n", i);
     if(write(fd, buf, sizeof(buf)) != sizeof(buf)) {
       printf("write %s failed\n", file);
       exit(-1);
@@ -148,14 +149,19 @@ void test1()
   file[0] = 'B';
   file[2] = '\0';
   for(int i = 0; i < NCHILD; i++){
+      printf("0.0\n");
     file[1] = '0' + i;
     unlink(file);
+      printf("0.1\n");
     if (i == 0) {
       createfile(file, BIG);
+      printf("0.2\n");
     } else {
       createfile(file, 1);
+      printf("0.3\n");
     }
   }
+  printf("1\n");
   for(int i = 0; i < NCHILD; i++){
     file[1] = '0' + i;
     int pid = fork();
@@ -179,6 +185,7 @@ void test1()
       exit(0);
     }
   }
+  printf("2\n");
 
   for(int i = 0; i < NCHILD; i++){
     wait(0);

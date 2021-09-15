@@ -38,7 +38,7 @@ binit(void)
 {
   struct buf *b;
 
-  /* initlock(&bcache.lock, "bcache"); */
+  initlock(&bcache.lock, "bcache");
 
   // Create linked list of buffers
   /* bcache.head.prev = &bcache.head; */
@@ -73,22 +73,27 @@ bget(uint dev, uint blockno)
 
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.
+  /* acquire(&bcache.lock); */
   uint64 oldest_timestamp = ticks;
   struct buf *lub = 0;
+  /* struct buf *prev_lub = 0; */
   for (b = bcache.buf; b < bcache.buf + NBUF; b++) {
       acquiresleep(&b->lock);
       if (b->refcnt == 0 && b->timestamp < oldest_timestamp) {
           oldest_timestamp = b->timestamp;
-          if (lub) {
-              releasesleep(&lub->lock);
-          }
+          /* if (lub) { */
+              /* releasesleep(&lub->lock); */
+          /* } */
           lub = b;
       } else {
-          releasesleep(&b->lock);
+          /* releasesleep(&b->lock); */
       }
+      releasesleep(&b->lock);
   }
 
   if (lub) {
+      /* release(&bcache.lock); */
+      acquiresleep(&lub->lock);
       lub->dev = dev;
       lub->blockno = blockno;
       lub->valid = 0;
@@ -140,16 +145,20 @@ brelse(struct buf *b)
 
 void
 bpin(struct buf *b) {
-  acquiresleep(&b->lock);
+  /* acquiresleep(&b->lock); */
+  acquire(&bcache.lock);
   b->refcnt++;
-  releasesleep(&b->lock);
+  /* releasesleep(&b->lock); */
+  release(&bcache.lock);
 }
 
 void
 bunpin(struct buf *b) {
-  acquiresleep(&b->lock);
+  /* acquiresleep(&b->lock); */
+  acquire(&bcache.lock);
   b->refcnt--;
-  releasesleep(&b->lock);
+  /* releasesleep(&b->lock); */
+  release(&bcache.lock);
 }
 
 
