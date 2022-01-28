@@ -3,6 +3,9 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 #include "proc.h"
 #include "defs.h"
 
@@ -65,6 +68,36 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if (r_scause() == 13 || r_scause() == 15) {
+    uint64 addr = r_stval();
+    // Check whether it's in vma
+    if (p->vma) {
+      struct mment *ent = p->vma;
+      while (ent) {
+        if (addr >= ent->addr && addr < ent->addr + ent->len) {
+          break;
+        }
+        ent = ent->next;
+      }
+      if (ent) {
+        // addr inside entry ent
+        growproc(PGROUNDDOWN(addr) + PGSIZE - p->sz);
+        uint64 copy_len = ent->len > PGSIZE - (ent->addr % PGSIZE) ? PGSIZE - (ent->addr % PGSIZE) : ent->len;
+        ilock(ent->file->ip);
+        if (readi(ent->file->ip, 1, ent->addr, ent->offset, copy_len) != copy_len) {
+          iunlock(ent->file->ip);
+          printf("bad readi\n");
+          p->killed = 1;
+        }
+        iunlock(ent->file->ip);
+      } else {
+        printf("page fault, addr not in vma\n");
+        p->killed = 1;
+      }
+    } else {
+      printf("page fault, no vma\n");
+      p->killed = 1;
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {

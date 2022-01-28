@@ -701,3 +701,70 @@ procdump(void)
     printf("\n");
   }
 }
+
+struct mment *find_unused_mment() {
+  struct proc *p = myproc();
+  for (int i = 0; i < NMMAP_ENT; i++) {
+    if (p->mments[i].len == 0) {
+      return &(p->mments[i]);
+    }
+  }
+  return 0;
+}
+
+
+struct mment *record_addr(uint64 addr, uint64 len, int perm, int flags, struct file *file, uint64 offset) {
+  struct proc *p = myproc();
+  struct mment *new_ent = find_unused_mment();
+  if (new_ent) {
+    new_ent->addr = addr;
+    new_ent->len = len;
+    new_ent->perm = perm;
+    new_ent->flags = flags;
+    new_ent->file = file;
+    new_ent->offset = offset;
+  } else {
+    return 0;
+  }
+  if (p->vma) {
+    struct mment *ent = p->vma;
+    while (ent->next && (!(addr > ent->addr + ent->len && addr + len < ent->next->addr))) {
+      ent = ent->next;
+    }
+    //find free space between two entries
+    if (ent->next) {
+      new_ent->next = ent->next;
+      ent->next = new_ent;
+    } else {
+      // ent is the last entry
+      ent->next = new_ent;
+      new_ent->next = 0;
+    }
+  } else {
+    new_ent->next = 0;
+    p->vma = new_ent;
+  }
+  return new_ent;
+}
+
+
+
+
+uint64 request_addr(uint64 len) {
+  struct proc *p = myproc();
+  uint64 addr;
+  if (p->vma) {
+    struct mment *ent = p->vma;
+    while (ent->next && (ent->next->addr - ent->addr - ent->len < len)) {
+      ent = ent->next;
+    }
+    addr = ent->addr + ent->len;
+  } else {
+    addr = p->sz;
+  }
+  if (addr + len > TRAPFRAME) {
+    return 0;
+  } else {
+    return addr;
+  }
+}

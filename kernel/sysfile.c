@@ -79,6 +79,41 @@ sys_read(void)
 }
 
 uint64
+sys_mmap(void)
+{
+  uint64 len, offset, addr;
+  int prot, flags, fd;
+  struct file *f;
+
+  if (argaddr(1, &len) < 0 || argint(2, &prot) < 0 || argint(3, &flags) < 0 || argint(4, &fd) < 0 || argaddr(5, &offset) < 0) {
+    return -1;
+  }
+  if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0) {
+    return -1;
+  }
+  filedup(f);
+  addr = request_addr(len);
+  if (addr) {
+    record_addr(addr, len, prot, flags, f, offset);
+  } else {
+    return -1;
+  }
+
+  return addr;
+}
+
+uint64 
+sys_munmap(void)
+{
+  uint64 addr, len;
+  if (argaddr(0, &addr) < 0 || argaddr(1, &len) < 0) {
+    return -1;
+  }
+  return 0;
+}
+
+
+uint64
 sys_write(void)
 {
   struct file *f;

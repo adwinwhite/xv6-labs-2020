@@ -80,6 +80,18 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
+#define NMMAP_ENT 16
+
+struct mment {
+  uint64 addr;
+  uint64 len;
+  int perm;
+  int flags;
+  struct file *file;
+  uint64 offset;
+  struct mment *next;
+};
+
 enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
@@ -103,4 +115,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  struct mment mments[NMMAP_ENT];
+  struct mment *vma;
 };
